@@ -1,0 +1,160 @@
+{% load twitter_tags %}
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>{% block title %}Twitter Clone{% endblock %}</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="http://blackrockdigital.github.io/startbootstrap-blog-home/css/blog-home.css" rel="stylesheet">
+
+
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="{% url "index" %}>Twitter Clone</a>
+            </div>
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav">
+                    <li>
+                        <a href="{% url "index" %}">
+                        All Tweets
+                        </a>
+                    </li>
+                    <li>
+                        {% if request.user.is_authenticated %}
+                            <a href="{% url "user_feed" %}">My Feed</a>
+                        {% else %}
+                            <a href="{% url "register" %}">Register</a>
+                        {% endif %}
+                    </li>
+                    {% if request.user.is_authenticated %}
+                    <li>
+                        <a href="{% url "new_tweet" %}">
+                        Make Tweet
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if request.user.is_authenticated %}
+                    <li>
+                        <a href="{% url "edit" %}">
+                        Edit Account
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li>
+                        {% if request.user.is_authenticated %}
+                            <a href="{% url "logout" %}">Logout</a>
+                        {% else %}
+                            <a href="{% url "login" %}">Log-in</a>
+                        {% endif %}
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <!-- /.container -->
+    </nav>
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li class="{{ message.tags }}">
+                    {{ message|safe }}
+                    <a href="#" class="close">×</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <!-- Page Content -->
+    <div class="container">
+
+        <div class="row">
+
+            <div class="col-md-8">
+
+            {% block content %}
+            {% endblock %}
+
+
+                <!-- Pager -->
+                <ul class="pager">
+                   
+                </ul>
+
+            </div>
+
+            <!-- Blog Sidebar Widgets Column -->
+            <div class="col-md-4">
+
+                <div class="well">
+                    <h4>Total tweets: {% total_tweets %}</h4>
+                    <h4>Total users: {% total_users %}</h4>
+                </div>
+
+                <!-- Side Widget Well -->
+                <div class="well">
+                    <h4>Random Tweet</h4>
+                    {% show_random_tweet %}
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <div class="row">
+                <div class="col-lg-12">
+                    <p>Copyright &copy; Twitter Clone 2016</p>
+                </div>
+                <!-- /.col-lg-12 -->
+            </div>
+            <!-- /.row -->
+        </footer>
+
+    </div>
+    <!-- /.container -->
+
+     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+     <script src=" http://cdn.jsdelivr.net/jquery.cookie/1.4.1/jquery.cookie.min.js "></script>
+      <!-- Bootstrap Core JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <script>
+        var csrftoken = $.cookie('csrftoken');
+        function csrfSafeMethod(method) {
+            // these HTTP methods do not require CSRF protection
+            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+        }
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            }
+        });
+
+        $(document).ready(function(){
+            {% block domready %}
+            {% endblock %}
+        });
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,17 @@
+{% load thumbnail %}
+{% for tweet in items %}
+  <a href="/users/{{ tweet.user.username }}"><p>{% thumbnail tweet.user.profile.photo "100x100" as im %}
+	<img src="{{ im.url }}">
+{% empty %}
+	<img src="https://www.bomgar.com/assets/img/default-user-icon.png">
+{% endthumbnail %}
+</a>
+<a href="/users/{{ tweet.user.username }}">
+	{{ tweet.user.username }}
+</a>
+ posted on {{ tweet.created|date }} at {{ tweet.created|time }}</p>
+ <p>{{tweet.text}}</p>
+ <hr>
+                
+{% endfor %}
+

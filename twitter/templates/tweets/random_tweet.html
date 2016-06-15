@@ -1,0 +1,12 @@
+{% load thumbnail %}
+  <a href="/users/{{ random_tweet.user.username }}"><p>{% thumbnail random_tweet.user.profile.photo "100x100" as im %}
+	<img src="{{ im.url }}">
+{% empty %}
+	<img src="https://www.bomgar.com/assets/img/default-user-icon.png">
+{% endthumbnail %}
+</a>
+<a href="/users/{{ random_tweet.user.username }}">
+	{{ random_tweet.user.username }}
+</a>
+ posted on {{ random_tweet.created|date }} at {{ random_tweet.created|time }}</p>
+ <p>{{random_tweet.text}}</p>

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load thumbnail %}
+
+{% block content %}
+
+{% thumbnail user.profile.photo "100x100" as im %}
+<img src="{{ im.url }}">
+{% empty %}
+<img src="https://www.bomgar.com/assets/img/default-user-icon.png">
+{% endthumbnail %}
+  <a href="#" data-id="{{ user.id }}" data-action="{% if request.user in user.followers.all %}un{% endif %}follow" class="follow button">
+            {% if request.user not in user.followers.all %}
+                Follow
+            {% else %}
+                Unfollow
+            {% endif %}
+        </a> {{ user.username }}
+<h2>{{ user.username }} recent tweets:</h2>
+
+<div id="tweet-list">
+{% include "tweets/list_ajax.html" %}
+</div>
+
+{% endblock %}
+
+{% block domready %}
+    $('a.follow').click(function(e){
+        e.preventDefault();
+        $.post('{% url "follow" %}',
+            {
+                id: $(this).data('id'),
+                action: $(this).data('action')
+            },
+            function(data){
+                if (data['status'] == 'ok')
+                {
+                    var previous_action = $('a.follow').data('action');
+
+                    // toggle data-action
+                    $('a.follow').data('action', previous_action == 'follow' ? 'unfollow' : 'follow');
+                    // toggle link text
+                    $('a.follow').text(previous_action == 'follow' ? 'Unfollow' : 'Follow');
+                }
+        });
+    });
+    var page = 1;
+    var empty_page = false;
+    var block_request = false;
+
+    $(window).scroll(function() {
+        var margin = $(document).height() - $(window).height() - 200;
+        if  ($(window).scrollTop() > margin && empty_page == false && block_request == false) {
+            block_request = true;
+            page += 1;
+            $.get('?page=' + page, function(data) {
+                if(data == '')
+                {
+                    empty_page = true;
+                }
+                else {
+                    block_request = false;
+                    $('#tweet-list').append(data);
+                }
+            });
+        }
+    });
+{% endblock %}
