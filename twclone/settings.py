@@ -99,11 +99,7 @@ LOGOUT_URL = reverse_lazy('logout')
 
 THUMBNAIL_DEBUG = True
 
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_HOST_USER = 'smirniyhr@gmail.com'
-EMAIL_HOST_PASSWORD = 'hfcrjkmybrjd05'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
+#MAILGUN_BACKEND
 
 
 
