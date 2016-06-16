@@ -1,58 +1,77 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
 from django.views.decorators.http import require_POST
-from django.http import HttpResponse, JsonResponse
-from django.core.paginator import Paginator, EmptyPage, \
-									PageNotAnInteger
+from django.views.generic import ListView
+from django.views.generic.edit import FormView
+from django.http import JsonResponse
 from account.models import Follow
 from .models import Tweet
 from .forms import TweetForm
 
-def ajax_scroll(request, items, list_page, ajax_page, **values):
-	context = {}
-	paginator = Paginator(items, 6)
-	page = request.GET.get('page')
-	try:
-		items = paginator.page(page)
-	except PageNotAnInteger:
-		items = paginator.page(1)
-	except EmptyPage:
-		if request.is_ajax():
-			return HttpResponse('')
-		items = paginator.page(paginator.num_pages)
-	context['items'] = items
-	context.update(**values)
-	if request.is_ajax():
-		return render(request,
-					ajax_page,
-					context)
-	return render(request,
-					list_page,
-					context)
 
-def all_tweets(request):
-	tweets = Tweet.objects.all()
-	list_page = 'tweets/list.html'
-	ajax_page = 'tweets/list_ajax.html'
-	return ajax_scroll(request, tweets, list_page, ajax_page)
+class LoginRequiredMixin(object):
+    @method_decorator(login_required)
+    def dispatch(self, request, *args, **kwargs):
+        return super(LoginRequiredMixin, self).dispatch(request, *args, **kwargs)
 
-@login_required
-def user_feed(request):
-	tweets = Tweet.objects.all()
-	following_ids = request.user.following.values_list('id', flat=True)
-	tweets = tweets.filter(user_id__in=following_ids) 
-	list_page = 'tweets/list.html'
-	ajax_page = 'tweets/list_ajax.html'
-	return ajax_scroll(request, tweets, list_page, ajax_page)
-	
 
-def user_page(request, username):
-	user = get_object_or_404(User, username=username)
-	tweets = Tweet.objects.filter(user=user.id)
-	list_page = 'tweets/user_page.html'
-	ajax_page = 'tweets/list_ajax.html'
-	return ajax_scroll(request, tweets, list_page, ajax_page, user=user)
+class AjaxListView(ListView):
+	context_object_name = 'items'
+	paginate_by = 6
+
+	def render_to_response(self, context):
+		if self.request.is_ajax():
+			self.template_name = 'tweets/list_ajax.html'
+			return super(AjaxListView, self).render_to_response(context)
+		else:
+			return super(AjaxListView, self).render_to_response(context)
+
+
+class AllTweetsListView(AjaxListView):
+	model = Tweet
+	template_name = 'tweets/list.html'
+
+
+class UserFeedListView(LoginRequiredMixin, AjaxListView):
+	model = Tweet 
+	template_name = 'tweets/list.html'
+
+	def get_queryset(self):
+		queryset = Tweet.objects.all()
+		following_ids = self.request.user.following.values_list('id', flat=True)
+		queryset = queryset.filter(user_id__in=following_ids) 
+		return queryset
+
+
+class UserPageListView(AjaxListView):
+	model = Tweet
+	template_name = 'tweets/user_page.html'
+
+	def get_queryset(self):
+		username = self.kwargs.pop('username', None)
+		self.user = get_object_or_404(User, username=username)
+		queryset = Tweet.objects.filter(user=self.user.id)
+		return queryset
+
+	def get_context_data(self, **kwargs):
+		context = super(UserPageListView, self).get_context_data(**kwargs)
+		context['user'] = self.user 
+		return context
+
+
+class NewTweetView(LoginRequiredMixin, FormView):
+	template_name = 'tweets/new_tweet.html'
+	form_class = TweetForm
+	success_url = '/'
+
+	def form_valid(self, form):
+		new_tweet = form.save(commit=False)
+		new_tweet.user = self.request.user 
+		new_tweet.save()
+		return super(NewTweetView, self).form_valid(form)
+
 
 @login_required
 @require_POST
@@ -74,20 +93,3 @@ def follow(request):
 		except User.DoesNotExist:
 			return JsonResponse({'status': 'ko'})
 	return JsonResponse({'status': 'ko'})
-
-
-
-@login_required
-def new_tweet(request):
-	if request.method == 'POST':
-		form = TweetForm(data=request.POST)
-		if form.is_valid():
-			new_tweet = form.save(commit=False)
-			new_tweet.user = request.user 
-			new_tweet.save()
-			return redirect("/")
-	else:
-		form = TweetForm()
-	return render(request,
-		'tweets/new_tweet.html',
-		{'form': form})

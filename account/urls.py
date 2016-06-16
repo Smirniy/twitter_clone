@@ -4,7 +4,7 @@ from . import views
 
 urlpatterns = [
 
-    url(r'^register/$', views.register, name='register'),
+    url(r'^register/$', views.RegisterView.as_view(), name='register'),
     url(r'^edit/$', views.edit, name='edit'),
 
     url(r'^login/$', 'django.contrib.auth.views.login', name='login'),
